@@ -1,6 +1,7 @@
 package entities;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import strategies.EnergyChoiceStrategy;
 import strategies.EnergyChoiceStrategyType;
 
 import java.util.ArrayList;
@@ -15,11 +16,12 @@ public final class Distributor extends Entity {
     private int cost;
     private ArrayList<Contract> contracts;
     private boolean reapplyStrategy;
+    private int contractCost;
 
     public Distributor() {
         super();
         contracts = new ArrayList<>();
-        reapplyStrategy = false;
+        reapplyStrategy = true;
     }
 
     public  Distributor(int id, int budget, boolean isBankrupt, int contractLength,
@@ -31,7 +33,7 @@ public final class Distributor extends Entity {
         this.energyNeededKW = energyNeededKW;
         this.producerStrategy = producerStrategy;
         contracts = new ArrayList<>();
-        reapplyStrategy = false;
+        reapplyStrategy = true;
     }
 
     public int getContractLength() {
@@ -90,9 +92,52 @@ public final class Distributor extends Entity {
         this.reapplyStrategy = reapplyStrategy;
     }
 
+    public int getContractCost () {
+        return contractCost;
+    }
+
+    public void setContractCost (int contractCost) {
+        this.contractCost = contractCost;
+    }
+
     // Observer part of class
 
     public void update(Producer producer) {
         reapplyStrategy = true;
+    }
+
+    // Strategy part of class
+
+    public void chooseProducers(EnergyChoiceStrategy energyChoiceStrategy) {
+        int i, j, currentEnergy = 0;
+        ArrayList<Producer> producers = energyChoiceStrategy.getProducers();
+
+        // Sort producers by strategy
+        for (i = 0; i < producers.size() - 1; i++) {
+            for (j = i + 1; j < producers.size(); j++) {
+                if (energyChoiceStrategy.determineSwap(i, j)) {
+                    Producer temp = producers.get(i);
+                    producers.set(i, producers.get(j));
+                    producers.set(j, temp);
+                }
+            }
+        }
+
+        // Choose the producers in order until demand is fulfilled
+        i = 0;
+        while (currentEnergy < getEnergyNeededKW()) {
+            if (producers.get(i).getDistributors().size()
+                    == producers.get(i).getMaxDistributors()) {
+                i++;
+                continue;
+            }
+
+            producers.get(i).addObserver(this);
+            setCost(getCost() + (int) Math.round(Math.floor(producers.get(i).getPriceKW()
+                            * producers.get(i).getEnergyPerDistributor())));
+
+            currentEnergy += producers.get(i).getEnergyPerDistributor();
+            i++;
+        }
     }
 }

@@ -10,9 +10,11 @@ public class Producer implements MyObservable {
     private int energyPerDistributor;
     private ArrayList<Distributor> distributors;
     private boolean changedState;
+    private ArrayList<MonthlyStatistic> monthlyStatistics;
 
     public Producer() {
         distributors = new ArrayList<>();
+        monthlyStatistics = new ArrayList<>();
         changedState = false;
     }
 
@@ -23,6 +25,7 @@ public class Producer implements MyObservable {
         this.priceKW = priceKW;
         this.energyPerDistributor = energyPerDistributor;
         distributors = new ArrayList<>();
+        monthlyStatistics = new ArrayList<>();
         changedState = false;
     }
 
@@ -66,6 +69,16 @@ public class Producer implements MyObservable {
         this.energyPerDistributor = energyPerDistributor;
     }
 
+    public ArrayList<MonthlyStatistic> getMonthlyStatistics () {
+        return monthlyStatistics;
+    }
+
+    public void setMonthlyStatistics (ArrayList<MonthlyStatistic> monthlyStatistics) {
+        this.monthlyStatistics = monthlyStatistics;
+    }
+
+    // Observable part of class
+
     public ArrayList<Distributor> getDistributors() {
         return distributors;
     }
@@ -73,8 +86,6 @@ public class Producer implements MyObservable {
     public void setDistributors(ArrayList<Distributor> distributors) {
         this.distributors = distributors;
     }
-
-    // Observable part of class
 
     @Override
     public synchronized void addObserver(Distributor distributor) {

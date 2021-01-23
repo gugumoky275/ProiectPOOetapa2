@@ -48,7 +48,11 @@ Ce design patterns ati folosit, cum le-ati adaptat problemei date
 
 ### Dificultati intalnite, limitari, probleme
 
-e.g. pentru a rezolva problema X de checkstyle am facut ...
+Desi se specifica in enunt ca outputul pentru consumatori si distribuitori este la fel ca la
+etapa 1, se observa ca outputul la distribuitori are multe campuri in plus (corespunzatoare noii
+etape). Campul contractCost necesita salvarea preturilor finale din simulare deoarece eu lucrez cu
+acel ArrayList<int> prices. Fie il salvez in obiectul de tip input returnat (creeand un camp in
+plus doar pentru acest return) fie un camp inutil in Distributor (asa cum am ales).
 
 [optional ## Feedback, comments
 

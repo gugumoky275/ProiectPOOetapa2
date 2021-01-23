@@ -1,6 +1,7 @@
 import database.InitialData;
 import fileio.Input;
 import fileio.InputLoader;
+import fileio.Writer;
 import game.Simulation;
 
 /**
@@ -22,11 +23,12 @@ public final class Main {
         Input input = inputLoader.readData(args[0]);
 
         // Simulating the game
-        InitialData results;
+        InitialData result;
         Simulation simulation = new Simulation(input);
-        results = simulation.runSimulation();
+        result = simulation.runSimulation();
 
         // Writing the result
-
+        Writer writer = Writer.getInstance();
+        writer.writeData(args[1], result);
     }
 }

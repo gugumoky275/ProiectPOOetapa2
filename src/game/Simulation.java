@@ -3,16 +3,19 @@ package game;
 import database.DistributorChange;
 import database.InitialData;
 import database.MonthlyUpdate;
-import entities.Consumer;
-import entities.Contract;
-import entities.Distributor;
+import database.ProducerChange;
+import entities.*;
 import fileio.Input;
+import strategies.GreenStrategy;
+import strategies.PriceStrategy;
+import strategies.QuantityStrategy;
 
 import java.util.ArrayList;
 
 public final class Simulation {
     private static final double RATIO = 0.2;
     private static final double INTEREST = 1.2;
+    private static final int DISVCONST = 10;
     private final Input input;
 
     public Simulation(Input input) {
@@ -24,14 +27,14 @@ public final class Simulation {
         int profit, contractsCount;
 
         // Calculate price for distributor by formulas
-        profit = (int) Math.round(Math.floor(RATIO * distributor.getCost() / 10));
+        profit = (int) Math.round(Math.floor(RATIO * distributor.getCost() / DISVCONST));
 
         contractsCount = distributor.getContracts().size() > 0
                 ? distributor.getContracts().size() : 1;
 
         return (int) Math.round(Math.floor(
                 (float) distributor.getInfrastructureCost() / contractsCount)
-                + (float) distributor.getCost() / 10 + profit);
+                + (float) distributor.getCost() / DISVCONST + profit);
     }
 
     // Finds the distributor with the best deal for given consumer
@@ -50,6 +53,7 @@ public final class Simulation {
             if (distributor.isBankrupt()) {
                 continue;
             }
+
             for (Contract contract : distributor.getContracts()) {
                 if (contract.getConsumerId() == consumer.getId()
                         && contract.getRemainedContractMonths() > 0) {
@@ -77,7 +81,7 @@ public final class Simulation {
     // Subtracts money from entities that have to pay, adds money to entities that have to receive
     private void payTaxes() {
 
-        // Each consumer pays price and eventually debt, also receives income
+        // Each consumer pays the distributor price and eventually debt, also receives income
         for (Consumer consumer : input.getInitialData().getConsumers()) {
             if (consumer.isBankrupt()) {
                 continue;
@@ -91,15 +95,37 @@ public final class Simulation {
                         int debt = consumer.getDebt();
                         int budget = consumer.getBudget();
 
-
                         if (debt > 0 && consumer.getDebtDistributor().isBankrupt()) {
                             consumer.setDebt(0);
                             consumer.setDebtDistributor(null);
                         }
 
+                        int newDebt = (int) Math.round(Math.floor(INTEREST * price));
                         if (debt > 0) {
+                            if (consumer.getDebtDistributor().getId() != distributor.getId()) {
+                                if ((budget - debt - price) >= 0) {
+                                    consumer.setBudget(budget - debt - price);
+                                    distributor.setBudget(distributor.getBudget() + price);
 
-                            if ((budget - debt - price) < 0) {
+                                    consumer.getDebtDistributor().setBudget(
+                                            consumer.getDebtDistributor().getBudget() + debt);
+
+                                    consumer.setDebt(0);
+                                    consumer.setDebtDistributor(null);
+                                } else if ((budget - debt) < 0) {
+                                    consumer.setBankrupt(true);
+                                    break;
+                                } else {
+                                    consumer.setBudget(budget - debt);
+
+                                    consumer.getDebtDistributor().setBudget(
+                                            consumer.getDebtDistributor().getBudget() + debt);
+
+                                    consumer.setDebt(newDebt);
+                                    consumer.setDebtDistributor(distributor);
+                                }
+
+                            } else if ((budget - debt - price) < 0) {
                                 consumer.setBankrupt(true);
                                 break;
                             } else {
@@ -114,30 +140,26 @@ public final class Simulation {
                             }
                         } else {
                             if (budget < price) {
-                                consumer.setDebt((int) Math.round(Math.floor(INTEREST * price)));
+                                consumer.setDebt(newDebt);
                                 consumer.setDebtDistributor(distributor);
                             } else {
                                 consumer.setBudget(budget - price);
                                 distributor.setBudget(distributor.getBudget() +  price);
                             }
                         }
-
                         break;
                     }
                 }
             }
         }
 
-        // Each distributor pays price by formula and gets profit by formula
+        // Each distributor pays price by formula
         for (Distributor distributor : input.getInitialData().getDistributors()) {
             if (distributor.isBankrupt()) {
                 continue;
             }
 
-            int payment = distributor.getInfrastructureCost()
-                    + distributor.getBudget()
-                    * distributor.getContracts().size();
-
+            int payment = distributor.getInfrastructureCost() + distributor.getCost();
             distributor.setBudget(distributor.getBudget() - payment);
 
             if (distributor.getBudget() < 0) {
@@ -157,12 +179,13 @@ public final class Simulation {
         }
     }
 
-    // Checks for bankrupts and resolves any case of bankrupt found
+    // Checks for bankrupts and resolves any case of bankrupt found, returns true if the game
+    // should end
     private boolean resolveBankrupts() {
 
         boolean ok = true;
 
-        // Check if gams should end due to all distributors have bankrupt
+        // Check if game should end due to all distributors have bankrupt
         for (Distributor distributor : input.getInitialData().getDistributors()) {
             if (!distributor.isBankrupt()) {
                 ok = false;
@@ -210,8 +233,15 @@ public final class Simulation {
             }
         }
 
-        input.setInitialData(data);
-
+        // Apply the producer changes
+        for (ProducerChange producerChange : update.getProducerChanges()) {
+            for (Producer producer : data.getProducers()) {
+                if (producer.getId() == producerChange.getId()) {
+                    producer.setEnergyPerDistributor(producerChange.getEnergyPerDistributor());
+                    producer.notifyObservers();
+                }
+            }
+        }
     }
 
     /**
@@ -222,11 +252,51 @@ public final class Simulation {
 
         // For each month there is in game
         for (int i = 0; i <= input.getNumberOfTurns(); i++) {
-            ArrayList<Integer> prices = new ArrayList<>();
+
+            // For each producer do it's monthly statistics
+            if (i != 0) {
+                for (Producer producer : input.getInitialData().getProducers()) {
+                    producer.getMonthlyStatistics().add(new MonthlyStatistic(i,
+                            producer.getDistributors()));
+                }
+            }
+
+            // For each distributor apply strategy if needed
+            for (Distributor distributor : input.getInitialData().getDistributors()) {
+                if (distributor.isBankrupt()) {
+                    continue;
+                }
+
+                if (distributor.getReapplyStrategy()) {
+                    for (Producer producer : input.getInitialData().getProducers()) {
+                        if (producer.getDistributors().contains(distributor)) {
+                            producer.deleteObserver(distributor);
+                        }
+                    }
+
+                    switch (distributor.getProducerStrategy()) {
+                        case GREEN -> {
+                            distributor.chooseProducers(
+                                    new GreenStrategy(input.getInitialData().getProducers()));
+                        }
+                        case PRICE -> {
+                            distributor.chooseProducers(
+                                    new PriceStrategy(input.getInitialData().getProducers()));
+                        }
+                        case QUANTITY -> {
+                            distributor.chooseProducers(
+                                    new QuantityStrategy(input.getInitialData().getProducers()));
+                        }
+                    }
+                    distributor.setReapplyStrategy(false);
+                }
+            }
 
             // For each distributor recalculate the contract price
+            ArrayList<Integer> prices = new ArrayList<>();
             for (Distributor distributor : input.getInitialData().getDistributors()) {
                 prices.add(calculateCost(distributor));
+                distributor.setContractCost(calculateCost(distributor));
             }
 
             // For each consumer find best deal and apply if there is no current one
@@ -253,12 +323,11 @@ public final class Simulation {
 
 
                     // Create and add the new contract
-                    Contract contract = new Contract();
+                    int price = prices.get(input.getInitialData().getDistributors()
+                            .indexOf(bestDistributor));
 
-                    contract.setConsumerId(consumer.getId());
-                    contract.setPrice(prices.get(
-                            input.getInitialData().getDistributors().indexOf(bestDistributor)));
-                    contract.setRemainedContractMonths(bestDistributor.getContractLength());
+                    Contract contract = new Contract(consumer.getId(),
+                            price, bestDistributor.getContractLength());
 
                     bestDistributor.getContracts().add(contract);
                 }
