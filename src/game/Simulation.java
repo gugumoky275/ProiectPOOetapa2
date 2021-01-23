@@ -1,6 +1,6 @@
 package game;
 
-import database.CostChange;
+import database.DistributorChange;
 import database.InitialData;
 import database.MonthlyUpdate;
 import entities.Consumer;
@@ -11,46 +11,30 @@ import fileio.Input;
 import java.util.ArrayList;
 
 public final class Simulation {
-    private static Simulation instance = null;
-
     private static final double RATIO = 0.2;
     private static final double INTEREST = 1.2;
+    private final Input input;
 
-    private Input input;
-
-    private Simulation() { }
-
-    /**
-     * Get instance of Singleton class Simulation
-     * @return the instance
-     */
-    public static Simulation getInstance() {
-        if (instance == null) {
-            instance = new Simulation();
-        }
-        return instance;
-    }
-
-    public void setInput(final Input input) {
+    public Simulation(Input input) {
         this.input = input;
     }
 
+    // Calculates contract price for given distributor
     private int calculateCost(final Distributor distributor) {
-
         int profit, contractsCount;
 
         // Calculate price for distributor by formulas
-        profit = (int) Math.round(Math.floor(RATIO * distributor.getProductionCost()));
+        profit = (int) Math.round(Math.floor(RATIO * distributor.getCost() / 10));
+
         contractsCount = distributor.getContracts().size() > 0
                 ? distributor.getContracts().size() : 1;
 
         return (int) Math.round(Math.floor(
                 (float) distributor.getInfrastructureCost() / contractsCount)
-                + distributor.getProductionCost()
-                + profit);
-
+                + (float) distributor.getCost() / 10 + profit);
     }
 
+    // Finds the distributor with the best deal for given consumer
     private Distributor getBestDeal(final Consumer consumer, final ArrayList<Integer> prices) {
 
         if (input.getInitialData().getDistributors() == null) {
@@ -90,6 +74,7 @@ public final class Simulation {
         return null;
     }
 
+    // Subtracts money from entities that have to pay, adds money to entities that have to receive
     private void payTaxes() {
 
         // Each consumer pays price and eventually debt, also receives income
@@ -150,7 +135,7 @@ public final class Simulation {
             }
 
             int payment = distributor.getInfrastructureCost()
-                    + distributor.getProductionCost()
+                    + distributor.getBudget()
                     * distributor.getContracts().size();
 
             distributor.setBudget(distributor.getBudget() - payment);
@@ -172,6 +157,7 @@ public final class Simulation {
         }
     }
 
+    // Checks for bankrupts and resolves any case of bankrupt found
     private boolean resolveBankrupts() {
 
         boolean ok = true;
@@ -206,18 +192,20 @@ public final class Simulation {
         return ok;
     }
 
+    // Applies the end of month changes (new consumers and price changes)
     private void addEntities(final int i) {
 
-        // Add the monthly new consumers and cost changes
         MonthlyUpdate update = input.getMonthlyUpdates().get(i);
         InitialData data = input.getInitialData();
+
+        // Add the new consumers
         data.getConsumers().addAll(update.getNewConsumers());
 
-        for (CostChange costChange : update.getCostsChanges()) {
+        // Apply the distributor changes
+        for (DistributorChange distributorChange : update.getDistributorChanges()) {
             for (Distributor distributor : data.getDistributors()) {
-                if (distributor.getId() == costChange.getId()) {
-                    distributor.setInfrastructureCost(costChange.getInfrastructureCost());
-                    distributor.setProductionCost(costChange.getProductionCost());
+                if (distributor.getId() == distributorChange.getId()) {
+                    distributor.setInfrastructureCost(distributorChange.getInfrastructureCost());
                 }
             }
         }
@@ -228,7 +216,7 @@ public final class Simulation {
 
     /**
      * Run the game simulation based on Input
-     * @return the output
+     * @return the output as a modified InitialData
      */
     public InitialData runSimulation() {
 
@@ -264,7 +252,7 @@ public final class Simulation {
 
 
 
-                    // Add the new contract
+                    // Create and add the new contract
                     Contract contract = new Contract();
 
                     contract.setConsumerId(consumer.getId());
@@ -276,10 +264,10 @@ public final class Simulation {
                 }
             }
 
-            // Apply monthly payments
+            // Apply monthly payments/incomes
             payTaxes();
 
-            // Check and resolve bankrupts
+            // Resolve bankrupts and stop the game if all are bankrupt
             if (resolveBankrupts()) {
                 break;
             }

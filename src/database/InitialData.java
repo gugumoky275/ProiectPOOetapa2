@@ -2,12 +2,14 @@ package database;
 
 import entities.Consumer;
 import entities.Distributor;
+import entities.Producer;
 
 import java.util.ArrayList;
 
 public final class InitialData {
     private ArrayList<Consumer> consumers;
     private ArrayList<Distributor> distributors;
+    private ArrayList<Producer> producers;
 
     public InitialData() {
         this.consumers = new ArrayList<>();
@@ -28,5 +30,13 @@ public final class InitialData {
 
     public void setDistributors(final ArrayList<Distributor> distributors) {
         this.distributors = distributors;
+    }
+
+    public ArrayList<Producer> getProducers () {
+        return producers;
+    }
+
+    public void setProducers (ArrayList<Producer> producers) {
+        this.producers = producers;
     }
 }

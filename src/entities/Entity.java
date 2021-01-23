@@ -9,6 +9,16 @@ public class Entity {
     protected int budget;
     protected boolean isBankrupt;
 
+    public Entity() {
+        isBankrupt = false;
+    }
+
+    public Entity(int id, int budget, boolean isBankrupt) {
+        this.id = id;
+        this.budget = budget;
+        this.isBankrupt = isBankrupt;
+    }
+
     /**
      * Gets the id
      * @return the id

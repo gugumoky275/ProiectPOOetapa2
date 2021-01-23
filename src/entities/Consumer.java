@@ -2,11 +2,19 @@ package entities;
 
 public final class Consumer extends Entity {
     private int monthlyIncome;
-    private int debt = 0;
-    private Distributor debtDistributor = null;
+    private int debt;
+    private Distributor debtDistributor;
 
     public Consumer() {
         isBankrupt = false;
+        debt = 0;
+        debtDistributor = null;
+    }
+
+    public Consumer(int id, int budget, boolean isBankrupt) {
+        super(id, budget, isBankrupt);
+        debt = 0;
+        debtDistributor = null;
     }
 
     public int getMonthlyIncome() {

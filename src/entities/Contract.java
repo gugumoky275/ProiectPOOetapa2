@@ -7,6 +7,12 @@ public final class Contract {
 
     public Contract() { }
 
+    public Contract(int consumerId, int price, int remainedContractMonths) {
+        this.consumerId = consumerId;
+        this.price = price;
+        this.remainedContractMonths = remainedContractMonths;
+    }
+
     public int getConsumerId() {
         return consumerId;
     }

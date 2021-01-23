@@ -1,11 +1,10 @@
 package database;
 
-public final class CostChange {
+public final class DistributorChange {
     private int id;
     private int infrastructureCost;
-    private int productionCost;
 
-    public CostChange() { }
+    public DistributorChange () { }
 
     public int getId() {
         return id;
@@ -21,13 +20,5 @@ public final class CostChange {
 
     public void setInfrastructureCost(final int infrastructureCost) {
         this.infrastructureCost = infrastructureCost;
-    }
-
-    public int getProductionCost() {
-        return productionCost;
-    }
-
-    public void setProductionCost(final int productionCost) {
-        this.productionCost = productionCost;
     }
 }
