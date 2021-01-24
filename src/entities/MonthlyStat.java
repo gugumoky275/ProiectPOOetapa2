@@ -2,11 +2,11 @@ package entities;
 
 import java.util.ArrayList;
 
-public class MonthlyStatistic {
+public final class MonthlyStat {
     private int month;
     private ArrayList<Integer> distributorsIds;
 
-    public MonthlyStatistic(int month, ArrayList<Distributor> distributors) {
+    public MonthlyStat(int month, ArrayList<Distributor> distributors) {
         this.month = month;
         distributorsIds = new ArrayList<>();
         for (Distributor distributor : distributors) {

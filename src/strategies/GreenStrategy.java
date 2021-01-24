@@ -1,17 +1,16 @@
 package strategies;
 
-import entities.Distributor;
 import entities.Producer;
 
 import java.util.ArrayList;
 
-public class GreenStrategy extends EnergyChoiceStrategy {
+public final class GreenStrategy extends EnergyChoiceStrategy {
     public GreenStrategy(ArrayList<Producer> producers) {
-        this.producers = producers;
+        this.producers = new ArrayList<>(producers);
     }
 
     @Override
-    public boolean determineSwap (int i, int j) {
+    public boolean determineSwap(int i, int j) {
         // Green energy first
         if (producers.get(i).getEnergyType().isRenewable()
                 && !producers.get(j).getEnergyType().isRenewable()) {

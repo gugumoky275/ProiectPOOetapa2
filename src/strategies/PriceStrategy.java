@@ -1,17 +1,16 @@
 package strategies;
 
-import entities.Distributor;
 import entities.Producer;
 
 import java.util.ArrayList;
 
-public class PriceStrategy extends EnergyChoiceStrategy {
+public final class PriceStrategy extends EnergyChoiceStrategy {
     public PriceStrategy(ArrayList<Producer> producers) {
-        this.producers = producers;
+        this.producers = new ArrayList<>(producers);
     }
 
     @Override
-    public boolean determineSwap (int i, int j) {
+    public boolean determineSwap(int i, int j) {
         // Best priceKW first
         if (producers.get(i).getPriceKW() < producers.get(j).getPriceKW()) {
             return false;

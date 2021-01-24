@@ -32,11 +32,11 @@ public final class InitialData {
         this.distributors = distributors;
     }
 
-    public ArrayList<Producer> getProducers () {
+    public ArrayList<Producer> getProducers() {
         return producers;
     }
 
-    public void setProducers (ArrayList<Producer> producers) {
+    public void setProducers(ArrayList<Producer> producers) {
         this.producers = producers;
     }
 }

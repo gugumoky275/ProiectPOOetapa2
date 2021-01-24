@@ -23,19 +23,19 @@ public final class MonthlyUpdate {
         this.newConsumers = newConsumers;
     }
 
-    public ArrayList<DistributorChange> getDistributorChanges () {
+    public ArrayList<DistributorChange> getDistributorChanges() {
         return distributorChanges;
     }
 
-    public void setDistributorChanges (ArrayList<DistributorChange> distributorChanges) {
+    public void setDistributorChanges(ArrayList<DistributorChange> distributorChanges) {
         this.distributorChanges = distributorChanges;
     }
 
-    public ArrayList<ProducerChange> getProducerChanges () {
+    public ArrayList<ProducerChange> getProducerChanges() {
         return producerChanges;
     }
 
-    public void setProducerChanges (ArrayList<ProducerChange> producerChanges) {
+    public void setProducerChanges(ArrayList<ProducerChange> producerChanges) {
         this.producerChanges = producerChanges;
     }
 }

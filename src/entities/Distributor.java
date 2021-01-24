@@ -7,6 +7,7 @@ import strategies.EnergyChoiceStrategyType;
 import java.util.ArrayList;
 
 public final class Distributor extends Entity {
+    private static final int DIVCONST = 10;
     private int contractLength;
 
     @JsonAlias({"initialInfrastructureCost"})
@@ -22,6 +23,7 @@ public final class Distributor extends Entity {
         super();
         contracts = new ArrayList<>();
         reapplyStrategy = true;
+        cost = 0;
     }
 
     public  Distributor(int id, int budget, boolean isBankrupt, int contractLength,
@@ -34,6 +36,7 @@ public final class Distributor extends Entity {
         this.producerStrategy = producerStrategy;
         contracts = new ArrayList<>();
         reapplyStrategy = true;
+        cost = 0;
     }
 
     public int getContractLength() {
@@ -68,11 +71,11 @@ public final class Distributor extends Entity {
         this.producerStrategy = producerStrategy;
     }
 
-    public int getCost () {
+    public int getCost() {
         return cost;
     }
 
-    public void setCost (int cost) {
+    public void setCost(int cost) {
         this.cost = cost;
     }
 
@@ -92,22 +95,29 @@ public final class Distributor extends Entity {
         this.reapplyStrategy = reapplyStrategy;
     }
 
-    public int getContractCost () {
+    public int getContractCost() {
         return contractCost;
     }
 
-    public void setContractCost (int contractCost) {
+    public void setContractCost(int contractCost) {
         this.contractCost = contractCost;
     }
 
     // Observer part of class
 
-    public void update(Producer producer) {
+    /**
+     * Updates this Observer if any Observable (associated Producer) has changed
+     */
+    public void update() {
         reapplyStrategy = true;
     }
 
     // Strategy part of class
 
+    /**
+     * Assigns this Distributor to the producer it needs, based on given strategy
+     * @param energyChoiceStrategy the Strategy chosen
+     */
     public void chooseProducers(EnergyChoiceStrategy energyChoiceStrategy) {
         int i, j, currentEnergy = 0;
         ArrayList<Producer> producers = energyChoiceStrategy.getProducers();
@@ -125,6 +135,7 @@ public final class Distributor extends Entity {
 
         // Choose the producers in order until demand is fulfilled
         i = 0;
+        float aux = 0;
         while (currentEnergy < getEnergyNeededKW()) {
             if (producers.get(i).getDistributors().size()
                     == producers.get(i).getMaxDistributors()) {
@@ -133,11 +144,12 @@ public final class Distributor extends Entity {
             }
 
             producers.get(i).addObserver(this);
-            setCost(getCost() + (int) Math.round(Math.floor(producers.get(i).getPriceKW()
-                            * producers.get(i).getEnergyPerDistributor())));
+            aux += producers.get(i).getPriceKW()
+                    * producers.get(i).getEnergyPerDistributor();
 
             currentEnergy += producers.get(i).getEnergyPerDistributor();
             i++;
         }
+        setCost((int) Math.round(Math.floor(aux / DIVCONST)));
     }
 }

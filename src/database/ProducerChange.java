@@ -4,7 +4,7 @@ public final class ProducerChange {
     private int id;
     private int energyPerDistributor;
 
-    public ProducerChange () { }
+    public ProducerChange() { }
 
     public int getId() {
         return id;

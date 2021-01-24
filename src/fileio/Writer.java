@@ -3,7 +3,12 @@ package fileio;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import database.InitialData;
-import entities.*;
+import entities.Consumer;
+import entities.Contract;
+import entities.Distributor;
+import entities.EnergyType;
+import entities.MonthlyStat;
+import entities.Producer;
 import strategies.EnergyChoiceStrategyType;
 
 import java.io.File;
@@ -61,7 +66,7 @@ public final class Writer {
         for (Producer producer : result.getProducers()) {
             ProducerOutput producerOutput = new ProducerOutput(producer.getId(),
                     producer.getMaxDistributors(), producer.getPriceKW(), producer.getEnergyType(),
-                    producer.getEnergyPerDistributor(), producer.getMonthlyStatistics());
+                    producer.getEnergyPerDistributor(), producer.getMonthlyStats());
 
             energyProducers.add(producerOutput);
         }
@@ -76,7 +81,7 @@ class Output {
     private ArrayList<DistributorOutput> distributors;
     private ArrayList<ProducerOutput> energyProducers;
 
-    public Output(ArrayList<ConsumerOutput> consumers, ArrayList<DistributorOutput> distributors,
+    Output(ArrayList<ConsumerOutput> consumers, ArrayList<DistributorOutput> distributors,
                   ArrayList<ProducerOutput> energyProducers) {
 
         this.consumers = consumers;
@@ -100,11 +105,11 @@ class Output {
         this.distributors = distributors;
     }
 
-    public ArrayList<ProducerOutput> getEnergyProducers () {
+    public ArrayList<ProducerOutput> getEnergyProducers() {
         return energyProducers;
     }
 
-    public void setEnergyProducers (ArrayList<ProducerOutput> energyProducers) {
+    public void setEnergyProducers(ArrayList<ProducerOutput> energyProducers) {
         this.energyProducers = energyProducers;
     }
 }
@@ -114,10 +119,10 @@ class ConsumerOutput {
     private boolean isBankrupt;
     private int budget;
 
-    public ConsumerOutput(int id, boolean isBankrupt, int budget) {
+    ConsumerOutput(int id, boolean isBankrupt, int budget) {
         this.id = id;
-        this. isBankrupt = isBankrupt;
-        this. budget = budget;
+        this.isBankrupt = isBankrupt;
+        this.budget = budget;
     }
 
     public int getId() {
@@ -154,7 +159,7 @@ class DistributorOutput {
     private boolean isBankrupt;
     private ArrayList<Contract> contracts;
 
-    public DistributorOutput(int id, int energyNeededKW, int contractCost, int budget,
+    DistributorOutput(int id, int energyNeededKW, int contractCost, int budget,
                              EnergyChoiceStrategyType producerStrategy, boolean isBankrupt,
                              ArrayList<Contract> contracts) {
         this.id = id;
@@ -174,19 +179,19 @@ class DistributorOutput {
         this.id = id;
     }
 
-    public int getEnergyNeededKW () {
+    public int getEnergyNeededKW() {
         return energyNeededKW;
     }
 
-    public void setEnergyNeededKW (int energyNeededKW) {
+    public void setEnergyNeededKW(int energyNeededKW) {
         this.energyNeededKW = energyNeededKW;
     }
 
-    public int getContractCost () {
+    public int getContractCost() {
         return contractCost;
     }
 
-    public void setContractCost (int contractCost) {
+    public void setContractCost(int contractCost) {
         this.contractCost = contractCost;
     }
 
@@ -198,11 +203,11 @@ class DistributorOutput {
         this.budget = budget;
     }
 
-    public EnergyChoiceStrategyType getProducerStrategy () {
+    public EnergyChoiceStrategyType getProducerStrategy() {
         return producerStrategy;
     }
 
-    public void setProducerStrategy (EnergyChoiceStrategyType producerStrategy) {
+    public void setProducerStrategy(EnergyChoiceStrategyType producerStrategy) {
         this.producerStrategy = producerStrategy;
     }
 
@@ -229,17 +234,17 @@ class ProducerOutput {
     private float priceKW;
     private EnergyType energyType;
     private int energyPerDistributor;
-    private ArrayList<MonthlyStatistic> monthlyStatistics;
+    private ArrayList<MonthlyStat> monthlyStats;
 
-    public ProducerOutput(int id, int maxDistributors, float priceKW,
+    ProducerOutput(int id, int maxDistributors, float priceKW,
                           EnergyType energyType, int energyPerDistributor,
-                          ArrayList<MonthlyStatistic> monthlyStatistics) {
+                          ArrayList<MonthlyStat> monthlyStats) {
         this.id = id;
         this.maxDistributors = maxDistributors;
         this.priceKW = priceKW;
         this.energyType = energyType;
         this.energyPerDistributor = energyPerDistributor;
-        this.monthlyStatistics = monthlyStatistics;
+        this.monthlyStats = monthlyStats;
     }
 
     public int getId() {
@@ -282,12 +287,12 @@ class ProducerOutput {
         this.energyPerDistributor = energyPerDistributor;
     }
 
-    public ArrayList<MonthlyStatistic> getMonthlyStatistics () {
-        return monthlyStatistics;
+    public ArrayList<MonthlyStat> getMonthlyStats() {
+        return monthlyStats;
     }
 
-    public void setMonthlyStatistics (ArrayList<MonthlyStatistic> monthlyStatistics) {
-        this.monthlyStatistics = monthlyStatistics;
+    public void setMonthlyStats(ArrayList<MonthlyStat> monthlyStats) {
+        this.monthlyStats = monthlyStats;
     }
 }
 

@@ -5,8 +5,6 @@ public final class Contract {
     private int price;
     private int remainedContractMonths;
 
-    public Contract() { }
-
     public Contract(int consumerId, int price, int remainedContractMonths) {
         this.consumerId = consumerId;
         this.price = price;

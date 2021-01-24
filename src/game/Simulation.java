@@ -4,18 +4,23 @@ import database.DistributorChange;
 import database.InitialData;
 import database.MonthlyUpdate;
 import database.ProducerChange;
-import entities.*;
+import entities.Consumer;
+import entities.Contract;
+import entities.Distributor;
+import entities.MonthlyStat;
+import entities.Producer;
+import entities.Entity;
 import fileio.Input;
 import strategies.GreenStrategy;
 import strategies.PriceStrategy;
 import strategies.QuantityStrategy;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 
 public final class Simulation {
     private static final double RATIO = 0.2;
     private static final double INTEREST = 1.2;
-    private static final int DISVCONST = 10;
     private final Input input;
 
     public Simulation(Input input) {
@@ -27,14 +32,14 @@ public final class Simulation {
         int profit, contractsCount;
 
         // Calculate price for distributor by formulas
-        profit = (int) Math.round(Math.floor(RATIO * distributor.getCost() / DISVCONST));
+        profit = (int) Math.round(Math.floor(RATIO * distributor.getCost()));
 
         contractsCount = distributor.getContracts().size() > 0
                 ? distributor.getContracts().size() : 1;
 
         return (int) Math.round(Math.floor(
                 (float) distributor.getInfrastructureCost() / contractsCount)
-                + (float) distributor.getCost() / DISVCONST + profit);
+                + (float) distributor.getCost() + profit);
     }
 
     // Finds the distributor with the best deal for given consumer
@@ -159,7 +164,8 @@ public final class Simulation {
                 continue;
             }
 
-            int payment = distributor.getInfrastructureCost() + distributor.getCost();
+            int payment = distributor.getInfrastructureCost() + distributor.getCost()
+                    * distributor.getContracts().size();
             distributor.setBudget(distributor.getBudget() - payment);
 
             if (distributor.getBudget() < 0) {
@@ -216,8 +222,7 @@ public final class Simulation {
     }
 
     // Applies the end of month changes (new consumers and price changes)
-    private void addEntities(final int i) {
-
+    private void addConsumersDistributors(final int i) {
         MonthlyUpdate update = input.getMonthlyUpdates().get(i);
         InitialData data = input.getInitialData();
 
@@ -232,6 +237,11 @@ public final class Simulation {
                 }
             }
         }
+    }
+
+    private void addProducers(final int i) {
+        MonthlyUpdate update = input.getMonthlyUpdates().get(i);
+        InitialData data = input.getInitialData();
 
         // Apply the producer changes
         for (ProducerChange producerChange : update.getProducerChanges()) {
@@ -244,6 +254,34 @@ public final class Simulation {
         }
     }
 
+    // Reapplies the producer search by strategy when needed
+    private void distributorStrategySearch() {
+        for (Distributor distributor : input.getInitialData().getDistributors()) {
+            if (distributor.isBankrupt()) {
+                continue;
+            }
+
+            if (distributor.getReapplyStrategy()) {
+                for (Producer producer : input.getInitialData().getProducers()) {
+                    if (producer.getDistributors().contains(distributor)) {
+                        producer.deleteObserver(distributor);
+                    }
+                }
+
+                switch (distributor.getProducerStrategy()) {
+                    case GREEN -> distributor.chooseProducers(
+                            new GreenStrategy(input.getInitialData().getProducers()));
+                    case PRICE -> distributor.chooseProducers(
+                            new PriceStrategy(input.getInitialData().getProducers()));
+                    case QUANTITY -> distributor.chooseProducers(
+                            new QuantityStrategy(input.getInitialData().getProducers()));
+                    default -> System.out.println("Not a valid strategy!");
+                }
+                distributor.setReapplyStrategy(false);
+            }
+        }
+    }
+
     /**
      * Run the game simulation based on Input
      * @return the output as a modified InitialData
@@ -252,43 +290,19 @@ public final class Simulation {
 
         // For each month there is in game
         for (int i = 0; i <= input.getNumberOfTurns(); i++) {
-
-            // For each producer do it's monthly statistics
             if (i != 0) {
-                for (Producer producer : input.getInitialData().getProducers()) {
-                    producer.getMonthlyStatistics().add(new MonthlyStatistic(i,
-                            producer.getDistributors()));
-                }
+                addConsumersDistributors(i - 1);
             }
 
             // For each distributor apply strategy if needed
-            for (Distributor distributor : input.getInitialData().getDistributors()) {
-                if (distributor.isBankrupt()) {
-                    continue;
-                }
+            distributorStrategySearch();
 
-                if (distributor.getReapplyStrategy()) {
-                    for (Producer producer : input.getInitialData().getProducers()) {
-                        if (producer.getDistributors().contains(distributor)) {
-                            producer.deleteObserver(distributor);
-                        }
-                    }
-
-                    switch (distributor.getProducerStrategy()) {
-                        case GREEN -> {
-                            distributor.chooseProducers(
-                                    new GreenStrategy(input.getInitialData().getProducers()));
-                        }
-                        case PRICE -> {
-                            distributor.chooseProducers(
-                                    new PriceStrategy(input.getInitialData().getProducers()));
-                        }
-                        case QUANTITY -> {
-                            distributor.chooseProducers(
-                                    new QuantityStrategy(input.getInitialData().getProducers()));
-                        }
-                    }
-                    distributor.setReapplyStrategy(false);
+            // For each producer do it's monthly statistics
+            if (i >= 2) {
+                for (Producer producer : input.getInitialData().getProducers()) {
+                    producer.getDistributors().sort(Comparator.comparingInt(Entity::getId));
+                    producer.getMonthlyStats().add(new MonthlyStat(i - 1,
+                            producer.getDistributors()));
                 }
             }
 
@@ -320,8 +334,6 @@ public final class Simulation {
                         distributor.getContracts().remove(old);
                     }
 
-
-
                     // Create and add the new contract
                     int price = prices.get(input.getInitialData().getDistributors()
                             .indexOf(bestDistributor));
@@ -341,10 +353,18 @@ public final class Simulation {
                 break;
             }
 
-            if (i != input.getNumberOfTurns()) {
-                // Apply end of round changes
-                addEntities(i);
+            if (i != 0) {
+                addProducers(i - 1);
             }
+        }
+
+        // Last strategy search
+        distributorStrategySearch();
+
+        // Last monthly update
+        for (Producer producer : input.getInitialData().getProducers()) {
+            producer.getMonthlyStats().add(new MonthlyStat(input.getNumberOfTurns(),
+                    producer.getDistributors()));
         }
 
         return input.getInitialData();

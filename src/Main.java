@@ -23,9 +23,8 @@ public final class Main {
         Input input = inputLoader.readData(args[0]);
 
         // Simulating the game
-        InitialData result;
         Simulation simulation = new Simulation(input);
-        result = simulation.runSimulation();
+        InitialData result = simulation.runSimulation();
 
         // Writing the result
         Writer writer = Writer.getInstance();

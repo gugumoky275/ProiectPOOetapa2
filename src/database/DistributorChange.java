@@ -4,7 +4,7 @@ public final class DistributorChange {
     private int id;
     private int infrastructureCost;
 
-    public DistributorChange () { }
+    public DistributorChange() { }
 
     public int getId() {
         return id;

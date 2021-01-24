@@ -2,31 +2,29 @@ package entities;
 
 import java.util.ArrayList;
 
-public class Producer implements MyObservable {
+public final class Producer implements MyObservable {
     private int id;
     private EnergyType energyType;
     private int maxDistributors;
     private float priceKW;
     private int energyPerDistributor;
     private ArrayList<Distributor> distributors;
-    private boolean changedState;
-    private ArrayList<MonthlyStatistic> monthlyStatistics;
+    private ArrayList<MonthlyStat> monthlyStats;
 
     public Producer() {
         distributors = new ArrayList<>();
-        monthlyStatistics = new ArrayList<>();
-        changedState = false;
+        monthlyStats = new ArrayList<>();
     }
 
-    public Producer(int id, EnergyType energyType, int maxDistributors, float priceKW, int energyPerDistributor) {
+    public Producer(int id, EnergyType energyType, int maxDistributors, float priceKW,
+                    int energyPerDistributor) {
         this.id = id;
         this.energyType = energyType;
         this.maxDistributors = maxDistributors;
         this.priceKW = priceKW;
         this.energyPerDistributor = energyPerDistributor;
         distributors = new ArrayList<>();
-        monthlyStatistics = new ArrayList<>();
-        changedState = false;
+        monthlyStats = new ArrayList<>();
     }
 
     public int getId() {
@@ -69,12 +67,12 @@ public class Producer implements MyObservable {
         this.energyPerDistributor = energyPerDistributor;
     }
 
-    public ArrayList<MonthlyStatistic> getMonthlyStatistics () {
-        return monthlyStatistics;
+    public ArrayList<MonthlyStat> getMonthlyStats() {
+        return monthlyStats;
     }
 
-    public void setMonthlyStatistics (ArrayList<MonthlyStatistic> monthlyStatistics) {
-        this.monthlyStatistics = monthlyStatistics;
+    public void setMonthlyStats(ArrayList<MonthlyStat> monthlyStats) {
+        this.monthlyStats = monthlyStats;
     }
 
     // Observable part of class
@@ -100,22 +98,7 @@ public class Producer implements MyObservable {
     @Override
     public void notifyObservers() {
         for (Distributor distributor : distributors) {
-            distributor.update(this);
+            distributor.update();
         }
-    }
-
-    @Override
-    public synchronized boolean hasChanged() {
-        return changedState;
-    }
-
-    @Override
-    public synchronized void setChanged() {
-        changedState = true;
-    }
-
-    @Override
-    public synchronized void clearChanged () {
-        changedState = false;
     }
 }

@@ -25,34 +25,131 @@ Biblioteci necesare pentru implementare:
 Tutorial Jackson JSON: 
 <https://ocw.cs.pub.ro/courses/poo-ca-cd/laboratoare/tutorial-json-jackson>
 
-[Puteti sa folositi si alte biblioteci si sa editati aceasta sectiune]
-
 ## Implementare
 
 ### Entitati
+* Deja in schelet : EnergyType pentru tipul de energie si EnergyChoiceStrategyType pentru tipurle
+de strategii. De asemenea Checkstyle, Test.
 
-Clasele folosite, nu este nevoie sa enumerati proprietati si metode, 
-doar sa ziceti rolul lor si de ce le folositi]
+* Am plecat de la entitatile principale Consumer, Distributor, Producer care contin campuri pentru
+datele din input dar si altele pentru interactiunile dintre ele, precum si constructori getteri si
+setteri pentru ele. Consumer si Distributor au cateva campuri comune asa ca ambele extind Entity,
+care contin acele campuri (si constructori, getteri setteri pentru ele).
+
+* Clasa Contract face legatura dintre Consumer si Distributor (prin intermediul contractului din
+enunt)
+
+* Interfata MyObservable este propria implementare de Observable, adaptata la minimul necesar aici
+
+* Clasa MonthlyStat este folosita pentru a retine toti distribuitorii abonati la un producator in
+fiecare luna pentru output
+
+* Clasele MonthlyUpdate, DistributorChange si ProducerChange retin schimbarile lunare aplicate
+entitatilor
+
+* Clasa InitialData stocheaza datele folosite pentru simulare, la un moment de timp (o luna)
+
+* Clasa Input retine tot inputul dat pentru un joc
+
+* Clasa InputLoader este folosita pentru citirea din fisier a datelor intr-un Input
+
+* Clasa Writer este folosita pentru scrierea in fisier a resultatelor, modelate cu ajutorul
+claselor din acelasi fisier ConsumerOutput, DistributorOutput, ProducerOutput care iau doar
+campurile necesare pentru afisare din obiectele Consumer, Distributor si respectiv Producer.
+Aceste obiecte sunt puse intr-un obiect de tip Output care este apoi afisat.
+
+* Clasa Simulation este cea care primeste un Input, simuleaza jocul si intoarce un output (tot de
+tip Input) cu starea finala a jocului. Clasa contine mai multe metode private pentru a simula jocul
+ce vor fi explicate mai jos.
+
+* Clasa EnergyChoiceStrategy este o clasa abstracta ce trebuie mostenita de catre orice clasa de
+tip strategy din acest proiect.
+
+* Clasele GreenStrategy, PriceStrategy si QuantityStrategy sunt clasele ce implementeaza
+strategiile de cautare de producatori alese de distribuitori.
 
 ### Flow
 
-Ce se intampla in fiecare runda (luna), cum comunica entitatile intre ele, ce clasa controleaza flowul etc
+* In fiecare luna codul din Simulation este gandit astfel:
+    * In fiecare luna se incepe prin a adauga noii consumatori si a schimba distribuitorii
+    indicati (exceptie facand luna 0)
+    * Distribuitorii din acest moment isi aplica strategiile de cautat (cei cu flagul setat)
+    * In acest moment incepand cu luna a doua (ignorand luna 0 si luna 1) se fac statisticile
+    luanre alre Producatorilor
+    * Se recalculeaza pretul contractelor fiecarui Distributor
+    * Fiecare consumator isi face un contract la cel mai bun distribuitor
+    * Consumatorii primesc banii lunar, apoi platesc facturile si/sau datoriile catre distribuitori
+    apoi acestia platesc costurile lor
+    * Se elimina din joc entitaile Bankrupt si daca toti distribuitorii sunt eliminati se opreste
+    jocul
+    * Se adauga schimbarile producatorilor (exceptand prima luna, luna0)
+* La final Distribuitorii isi mai aleg o data producatori daca e cazul si se mai face o data
+monthly update (altfel nu dadeau testele).
+
+* Exceptiile de la updatat consumatori si distribuitori inafara lunii 0, statisticile lunare fara
+primele 2 luni, adaugarea producatorilor fara luna 0 si ultimul monthly statistic de la final sunt
+facute pentru ca nu dadeau testele si codul a fost schimbat din aproape in aproape prin trial and
+error pana eventual a mers.
 
 ### Elemente de design OOP
 
-e.g Am folosit incapsulare pentru ... Am folosit abstractizare pentru ...
+* Am folosit mostenire pentru caracteristicile comune dintre Consumer si Distributor, prin Entity,
+precum si la strategii si Observable
+
+* Am impartit proiectul in pachete, database pentru clasele ce retin colectii de date folosite doar
+pentru a fi citite, entities pentru entitatile logice majore din joc, fileio pentru obiectele
+folosite la citit si scris din si in fisier, game pentru obiectele ce simuleaza jocul si strategies
+pentru strategiile distribuitorilor.
+
+* Am modularizat codul separand bucatile logice ale lui intre ele, faciliteaza urmarirea mai usoara
+a sa.
 
 ### Design patterns
 
-Ce design patterns ati folosit, cum le-ati adaptat problemei date
+* Am pastrat Singleton pentru clasele de citit si scris de la etapa trecuta.
+
+* Am folosit Observer si Strategy asa cum se cerea (si unde se recomanda)
+
+* Pentru Observer am scris interfata MyObservable cu cele 3 metode necesare, doua pentru adaugat si
+sters Ovservers din lista si una pentru a notifica Observatorii. Observabilii sunt producatorii
+care au un ArrayList<Distributor> pentru a retine distribuitorii care sunt abonati la ei, pentru
+a-i putea notifica atunci cand se schimba ceva. Cand un pret se schimba la un producator se
+apeleaza metoda de notify si pentru fiecare Distributor din lista producatorului se apeleaza metoda
+sa de update care seteaza o variabila boolean pe true. Aceasta variabila este verificata pentru a
+determina reaplicarea strategiei.
+
+* Pentru Strategy am creeat clasa abstracta EnergyChoiceSrategy ce ofera un ArrayList de
+producatori ce retine producatori din care trebuie sa se aleaga, o metoda get pentru acestia pentru
+a-i putea folosi in interiorul Distributor precum si metoda abstracta (cea care da tonul de
+Strategy) determineSwap. Aceasta este ca o functie de comparatie intre producatorii i si j retinuti
+in obiectele de tip strategy, compararea lor tinand cont de strategy-ul ales. Urmeaza apoi ca
+producatorii sa fie efectiv sortati si alesi in metoda Distribuitorilor chooseProducers. Deoarece
+sunt sortati trebuie instantiat un nou obiect de tip strategy de fiecare data cand s-a modificat
+ceva la producatori.
 
 ### Dificultati intalnite, limitari, probleme
 
-Desi se specifica in enunt ca outputul pentru consumatori si distribuitori este la fel ca la
+* Desi se specifica in enunt ca outputul pentru consumatori si distribuitori este la fel ca la
 etapa 1, se observa ca outputul la distribuitori are multe campuri in plus (corespunzatoare noii
 etape). Campul contractCost necesita salvarea preturilor finale din simulare deoarece eu lucrez cu
 acel ArrayList<int> prices. Fie il salvez in obiectul de tip input returnat (creeand un camp in
 plus doar pentru acest return) fie un camp inutil in Distributor (asa cum am ales).
 
-[optional ## Feedback, comments
+* Dificultati intelegere formule cu productionCost si cost (ilogic ca producatorul sa puna pret x pe
+curent (pretKW * cantitate) si distribuitorul sa plateasca pe acel curent x / 10.
+
+### Feedback, comments
+* Posibil sa fi fost prea multa bataie de cap cu intelesul flow-ului ideii de proiect
+(interactiunea consumator-distribuitor-producator). Din perspectiva celui care a creat tema nu stiu
+sigur cum ar fi putut fi remediat acest lucru, problema s-a transformat in "Cum fac codul asta sa
+mearga si sa obtin toate testele sa scap o data ca nu da nimic?", in loc sa fie "Cum as putea sa fac
+entitatile? Cum trebuie sa interactioneze? Este buna implementarea mea, are logica?", adica POO.
+
+* O propunere : (Desi poate e un pic neplacut) Incercati sa puneti pe cineva din echipa sa
+rezolve tema (eventual care nu a facut testele sau care nu a facut mult din enunt) si vedeti daca
+prinde flow-ul temei din primele incercari, ce intrebari pune, eventual daca sunt greseli ce
+trebuie corectate in checker.
+
+* Self comment : Am structurat bine prima etapa, a fost foarte usor sa adaug codul nou pentru
+aceasta etapa.
 
